@@ -1,0 +1,23 @@
+# GIFs que llegaron en negro
+
+Estos archivos se conservaron en `assets/raw-gifs/`, pero llegaron como un único frame negro de 720x405:
+
+- Transcripción LOCAL ultra precisa...
+- video manipulando varias pistas...
+- edición rápida / sustitución de palabras...
+- Movimiento de pistas...
+- recorte de subs inteligente...
+- Cuenta de usuario...
+- timelapse usando el programa...
+
+La página ya incluye tarjetas para esas funciones usando capturas del PDF o placeholders. Para reemplazarlas:
+
+1. Copia tu GIF correcto dentro de `assets/gifs/`.
+2. Abre `index.html`.
+3. Cambia el `src` y el `data-full` de la tarjeta correspondiente.
+
+Ejemplo:
+
+```html
+<img src="assets/gifs/recorte-inteligente.gif">
+```

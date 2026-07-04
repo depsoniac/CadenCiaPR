@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cadencia - Editor de subtítulos multipista</title>
+  <meta name="description" content="Cadencia es un editor de subtítulos multipista con transcripción local, detección de hablantes, marcadores para Premiere, Google Drive y exportación todo en uno mediante proyectos .msub.">
+  <meta name="theme-color" content="#0b0d13">
+  <meta property="og:title" content="Cadencia - Editor de subtítulos multipista">
+  <meta property="og:description" content="Transcribe, edita, organiza y exporta proyectos completos en un solo archivo .msub con precisión de fotograma.">
+  <meta property="og:image" content="assets/images/hero-editor.png">
+  <style>
+    :root{
+      --bg:#080a0f;
+      --bg-2:#0e1119;
+      --panel:#131722;
+      --panel-2:#171b28;
+      --line:#2a3042;
+      --text:#f6f7fb;
+      --muted:#a8adbb;
+      --muted-2:#747b91;
+      --orange:#ff6b4a;
+      --orange-2:#ff8a66;
+      --purple:#8b5cf6;
+      --purple-2:#b9a2ff;
+      --cyan:#55d6ff;
+      --shadow: 0 30px 90px rgba(0,0,0,.45);
+      --radius: 28px;
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      background:
+        radial-gradient(circle at 18% -10%, rgba(255,107,74,.24), transparent 32rem),
+        radial-gradient(circle at 80% 8%, rgba(139,92,246,.26), transparent 34rem),
+        linear-gradient(180deg, #0b0d13 0%, #080a0f 46%, #090b10 100%);
+      color:var(--text);
+      overflow-x:hidden;
+    }
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+    .container{width:min(1180px, calc(100% - 40px)); margin:0 auto}
+    .site-header{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter: blur(18px);
+      background:rgba(8,10,15,.72);
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    .nav{height:74px; display:flex; align-items:center; justify-content:flex-start; gap:34px}
+    .brand{display:flex; align-items:center; gap:12px; font-weight:900; letter-spacing:-.03em}
+    .logo{
+      width:42px; height:42px; border-radius:14px; display:grid; place-items:center;
+      background:linear-gradient(135deg, var(--orange), #ff7d5d 45%, var(--purple));
+      box-shadow:0 12px 30px rgba(255,107,74,.24);
+    }
+    .logo svg{width:23px;height:23px}
+    .nav-links{display:flex;align-items:center;gap:22px;color:var(--muted);font-weight:700;font-size:14px;margin-left:auto}
+    .nav-links a:hover{color:var(--text)}
+    .nav-actions{display:flex;gap:10px;align-items:center}
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:10px;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;padding:13px 17px;font-weight:850;font-size:14px;
+      background:rgba(255,255,255,.05);
+      transition: transform .2s ease, border .2s ease, background .2s ease, box-shadow .2s ease;
+      cursor:pointer;
+    }
+    .btn:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.08)}
+    .btn.primary{background:linear-gradient(135deg, var(--orange), var(--orange-2)); color:#fff; border-color:transparent; box-shadow:0 18px 38px rgba(255,107,74,.28)}
+    .btn.ghost{color:var(--muted)}
+
+    .hero{position:relative; padding:86px 0 70px}
+    .hero-grid{display:grid; grid-template-columns: .92fr 1.08fr; gap:42px; align-items:center}
+    .eyebrow{
+      display:inline-flex;align-items:center;gap:10px;
+      color:var(--purple-2); border:1px solid rgba(139,92,246,.35); background:rgba(139,92,246,.1);
+      padding:9px 14px;border-radius:999px;font-weight:900;font-size:13px;text-transform:uppercase;letter-spacing:.13em;
+    }
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--purple);box-shadow:0 0 24px var(--purple)}
+    h1{font-size:clamp(36px, 5.2vw, 66px);line-height:.96;margin:22px 0 20px;letter-spacing:-.065em;max-width:12ch}
+    .hero p{font-size:clamp(17px, 1.9vw, 21px);line-height:1.6;color:var(--muted);max-width:640px;margin:0 0 26px}
+    .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px}
+    .hero-tags{display:flex;gap:9px;flex-wrap:wrap}
+    .tag{border:1px solid rgba(255,255,255,.12);color:var(--muted);background:rgba(255,255,255,.04);padding:8px 11px;border-radius:12px;font-size:13px;font-weight:800}
+    .hero-card{
+      position:relative; padding:12px; border-radius:32px;
+      background:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+      border:1px solid rgba(255,255,255,.12); box-shadow:var(--shadow); overflow:hidden;
+    }
+    .hero-card:before{content:"";position:absolute;inset:-1px;background:radial-gradient(circle at 80% 10%, rgba(255,107,74,.28), transparent 38%);pointer-events:none}
+    .hero-card.hero-clean{padding:0;border-radius:34px;background:transparent;border:0;box-shadow:none;overflow:visible;display:flex;justify-content:center;align-items:center;justify-self:center;width:min(100%, 785px);max-width:100%}
+    .hero-card.hero-clean:before{display:none}
+    .hero-card.hero-clean .hero-visual{display:block;width:100%;max-width:100%;height:auto;max-height:none;aspect-ratio:auto;object-fit:contain;object-position:center center;border-radius:34px;border:0;box-shadow:0 24px 70px rgba(0,0,0,.38);background:#05060a}
+    .window{position:relative;border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:#0b0d13}
+    .window-top{height:42px;background:#151925;display:flex;align-items:center;gap:8px;padding:0 16px;color:var(--muted-2);font-size:13px;font-weight:700}
+    .traffic{width:11px;height:11px;border-radius:50%;display:inline-block}.r{background:#ff5f57}.y{background:#ffbd2e}.g{background:#28c840}
+    .hero-visual{display:block;width:auto;max-width:100%;aspect-ratio:auto;max-height:560px;object-fit:contain;object-position:center center;background:#05060a}
+    .shine{position:absolute;inset:0;background:linear-gradient(120deg, transparent, rgba(255,255,255,.08), transparent);transform:translateX(-100%);animation:shine 5s infinite}
+    @keyframes shine{40%,100%{transform:translateX(120%)}}
+
+    .stats{display:grid; grid-template-columns: repeat(4, 1fr); gap:14px; margin-top:42px}
+    .stat{padding:20px;border:1px solid rgba(255,255,255,.1);border-radius:22px;background:rgba(255,255,255,.045)}
+    .stat strong{display:block;font-size:28px;letter-spacing:-.04em}.stat span{color:var(--muted);font-weight:700;font-size:13px}
+
+    section{padding:76px 0}
+    .section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:28px;margin-bottom:32px}
+    .kicker{color:var(--purple-2);font-weight:950;letter-spacing:.14em;text-transform:uppercase;font-size:13px;margin-bottom:12px}
+    h2{font-size:clamp(30px, 4.2vw, 50px);line-height:1.02;margin:0;letter-spacing:-.055em}
+    .section-head p{color:var(--muted);line-height:1.6;max-width:560px;margin:0;font-size:17px}
+
+    .feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+    .feature-card{
+      position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.1);border-radius:28px;background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.035));
+      transition: transform .25s ease, border .25s ease, background .25s ease;
+      min-height:455px;
+    }
+    .feature-card:hover{transform:translateY(-4px);border-color:rgba(255,107,74,.28);background:linear-gradient(180deg, rgba(255,255,255,.095), rgba(255,255,255,.045))}
+    .media{
+      position:relative;background:#05060a;overflow:hidden;display:flex;align-items:center;justify-content:center;
+      aspect-ratio:16/9; padding:12px;
+    }
+    .media img{
+      width:100%;height:100%;object-fit:contain;object-position:center center;opacity:.98;transition:none;
+      border-radius:18px;background:#05060a;margin:auto;
+    }
+    .media-badge{position:absolute;left:12px;top:12px;z-index:2;border-radius:999px;background:rgba(11,13,19,.74);border:1px solid rgba(255,255,255,.13);padding:7px 10px;color:var(--text);font-size:12px;font-weight:900;backdrop-filter: blur(8px)}
+    .feature-content{padding:22px 22px 24px}
+    .feature-content h3{font-size:19px;line-height:1.08;margin:0 0 12px;letter-spacing:-.03em}
+    .feature-content p{margin:0;color:var(--muted);line-height:1.55;font-size:15px}
+    .bullets{display:grid; gap:10px; margin-top:16px;color:var(--muted);font-weight:650;font-size:14px}
+    .bullets span:before{content:"→";color:var(--purple-2);margin-right:8px}
+
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center}
+    .panel{border:1px solid rgba(255,255,255,.1);border-radius:var(--radius);background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.025));box-shadow:var(--shadow);overflow:hidden}
+    .panel.pad{padding:34px}
+    .panel h3{font-size:clamp(26px, 3.6vw, 42px);line-height:1.02;margin:0 0 18px;letter-spacing:-.05em}
+    .panel p{color:var(--muted);line-height:1.7;font-size:17px;margin:0 0 18px}
+    .checklist{display:grid;gap:13px;margin-top:22px}.check{display:flex;gap:12px;color:var(--muted);font-weight:700}.check b{color:var(--text)}
+    .check svg{width:20px;min-width:20px;margin-top:2px;color:var(--orange)}
+    .wide-media{padding:18px;display:flex;align-items:center;justify-content:center;min-height:380px}
+    .wide-media img{width:100%;height:100%;max-height:420px;aspect-ratio:16/9;object-fit:contain;object-position:center center;margin:auto;border-radius:20px;border:1px solid rgba(255,255,255,.1);background:#06070b}
+
+    .workflow{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}.step{padding:22px;border:1px solid rgba(255,255,255,.1);border-radius:22px;background:rgba(255,255,255,.045)}
+    .step strong{display:grid;place-items:center;width:34px;height:34px;border-radius:12px;background:rgba(139,92,246,.18);color:var(--purple-2);margin-bottom:14px}.step h3{font-size:17px;margin:0 0 8px}.step p{margin:0;color:var(--muted);font-size:14px;line-height:1.45}
+
+    .cta{padding:0 0 86px}.cta-box{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.13);border-radius:36px;background:linear-gradient(135deg, rgba(139,92,246,.25), rgba(255,107,74,.16)), #121520;padding:54px;text-align:center;box-shadow:var(--shadow)}
+    .cta-box:after{content:"";position:absolute;inset:auto -20% -75% -20%;height:230px;background:radial-gradient(closest-side, rgba(255,107,74,.32), transparent);pointer-events:none}
+    .cta-box h2{margin-bottom:16px}.cta-box p{margin:0 auto 26px;color:var(--muted);max-width:720px;line-height:1.6;font-size:18px}
+
+    footer{border-top:1px solid rgba(255,255,255,.08);padding:28px 0 46px;color:var(--muted)}
+    .footer-inner{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+    .footer-links{display:flex;gap:18px;font-weight:800;font-size:14px}
+
+    @media (max-width: 1080px){
+      .hero-grid,.split,.section-head{grid-template-columns:1fr;display:grid}
+      .feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .workflow{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .stats{grid-template-columns:repeat(2,1fr)}
+    }
+    @media (max-width: 720px){
+      .nav{height:auto;padding:14px 0;flex-wrap:wrap}
+      .nav-links{display:none}
+      .container{width:min(100%, calc(100% - 24px))}
+      .hero{padding:64px 0 52px}
+      .feature-grid,.workflow,.stats{grid-template-columns:1fr}
+      .panel.pad,.cta-box{padding:24px}
+      .feature-card{min-height:auto}
+      .wide-media{min-height:auto;padding:14px}
+      h1{max-width:none}
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="#top" aria-label="Cadencia">
+        <span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 7h14M5 12h10M5 17h7" stroke="white" stroke-width="2.4" stroke-linecap="round"/></svg></span>
+        <span>Cadencia</span>
+      </a>
+      <nav class="nav-links" aria-label="Principal">
+        <a href="#demos">Funciones</a>
+        <a href="#editor">Editor</a>
+        <a href="#ia-local">IA local</a>
+        <a href="#premiere">Premiere</a>
+        <a href="#drive">Drive</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <span class="eyebrow"><span class="dot"></span>Editor de subtítulos multipista</span>
+          <h1>Subtitula como si tu timeline tuviera superpoderes.</h1>
+          <p>Cadencia junta transcripción local, detección de hablantes, edición por fotograma, marcadores de revisión, censuras, capturas y biblioteca de proyectos en un solo flujo. En vez de brincar entre SRT, marcadores de Premiere y extensiones diferentes, puedes guardar y exportar todo en un solo archivo .msub para acelerar el workflow.</p>
+          <div class="hero-actions">
+            <a class="btn primary" href="#demos">Ver funciones</a>
+          </div>
+          <div class="hero-tags" aria-label="Formatos y capacidades">
+            <span class="tag">.msub todo en uno</span><span class="tag">.srt</span><span class="tag">video · audio</span><span class="tag">IA local</span><span class="tag">Premiere markers</span>
+          </div>
+        </div>
+        <div class="hero-card hero-clean">
+          <img class="hero-visual" src="assets/images/hero-programas-full.png" alt="Vista completa de programas de Cadencia mostrando proyectos recientes y navegación principal">
+        </div>
+      </div>
+      <div class="container stats" aria-label="Resumen de capacidades">
+        <div class="stat"><strong>Local</strong><span>Transcripción sin subir audio</span></div>
+        <div class="stat"><strong>Multi</strong><span>Pistas por hablante</span></div>
+        <div class="stat"><strong>.msub</strong><span>Todo el proyecto en 1 archivo</span></div>
+        <div class="stat"><strong>Drive</strong><span>Biblioteca sincronizada</span></div>
+      </div>
+    </section>
+
+    <section id="demos">
+      <div class="container">
+        <div class="section-head">
+          <div><div class="kicker">Galería de funciones</div><h2>Todo lo fuerte de Cadencia, visible en acción.</h2></div>
+          <p>Reorganicé la galería para que cada tarjeta use el GIF o la captura más relacionada con esa función, evitando visuales que no correspondan.</p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card">
+            <div class="media"><span class="media-badge">Timeline</span><img loading="lazy" src="assets/images/timeline-multipista.png" alt="Captura de la línea de tiempo multipista con forma de onda y pistas de subtítulos"></div>
+            <div class="feature-content"><h3>Manipulación multipista total</h3><p>Mueve, recorta, reordena y revisa pistas por hablante sin convertir el proyecto en un caos.</p><div class="bullets"><span>Color por hablante</span><span>Forma de onda visible</span><span>Edición por fotograma</span></div></div>
+          </article>
+
+          <article class="feature-card">
+            <div class="media"><span class="media-badge">IA local</span><img loading="lazy" src="assets/images/transcripcion-local.png" alt="Captura de la transcripción local con detección de hablantes"></div>
+            <div class="feature-content"><h3>Transcripción local con hablantes</h3><p>Genera subtítulos desde el audio y separa la conversación en pistas, sin depender de un servidor externo.</p><div class="bullets"><span>Modelos tiny a large-v3</span><span>Aceleración por GPU</span><span>Rango In → Out</span></div></div>
+          </article>
+
+          <article class="feature-card">
+            <div class="media"><span class="media-badge">Premiere</span><img loading="lazy" src="assets/gifs/censuras-manuales-marcadores.gif" alt="GIF de censuras manuales convertidas en marcadores para Premiere"></div>
+            <div class="feature-content"><h3>Censuras manuales a marcadores</h3><p>Las pistas de censura ya trabajadas se comparten todas juntas de forma rápida gracias a la extensión de Premiere, convirtiéndose en una lista navegable por timecode.</p><div class="bullets"><span>Lista por timecode</span><span>Pistas compartidas rápido</span><span>Extensión para Premiere</span></div></div>
+          </article>
+
+          <article class="feature-card">
+            <div class="media"><span class="media-badge">Detección</span><img loading="lazy" src="assets/gifs/palabras-a-censurar.gif" alt="GIF de detección automática de palabras a censurar con marcadores para Premiere"></div>
+            <div class="feature-content"><h3>Palabras sensibles detectadas</h3><p>Encuentra palabras que suelen necesitar censura y crea marcadores para ubicarlas sin estar cazándolas a mano.</p><div class="bullets"><span>Diccionario editable</span><span>Marcadores Premiere</span><span>Menos errores humanos</span></div></div>
+          </article>
+
+          <article class="feature-card">
+            <div class="media"><span class="media-badge">Importación</span><img loading="lazy" src="assets/images/importacion-srt.png" alt="Captura de importación de varias pistas SRT en un solo proyecto"></div>
+            <div class="feature-content"><h3>Importa varias pistas SRT</h3><p>Carga varios archivos .srt a la vez, conviértelos en pistas paralelas y guárdalos junto con marcadores, censuras y capturas dentro de un solo proyecto .msub.</p><div class="bullets"><span>Un SRT por hablante</span><span>Proyecto .msub</span><span>Exportación todo en uno</span></div></div>
+          </article>
+
+          <article class="feature-card">
+            <div class="media"><span class="media-badge">Control</span><img loading="lazy" src="assets/images/control-calidad.png" alt="Captura del panel de marcadores, censuras y correcciones de Cadencia"></div>
+            <div class="feature-content"><h3>Control de calidad con captura</h3><p>Marca correcciones, revisa solapes y deja capturas ligadas a cada marcador para que nada se pierda entre revisiones.</p><div class="bullets"><span>Marcadores con contexto</span><span>Correcciones con captura</span><span>Revisión ordenada</span></div></div>
+          </article>
+
+          <article class="feature-card">
+            <div class="media"><span class="media-badge">Ajustes</span><img loading="lazy" src="assets/images/personalizacion.png" alt="Captura del panel de personalización y atajos de Cadencia"></div>
+            <div class="feature-content"><h3>Personalización y atajos</h3><p>Adapta el entorno a tu forma de trabajar con tema oscuro o claro, color de acento, alto contraste y accesos rápidos reutilizables.</p><div class="bullets"><span>Atajos reconfigurables</span><span>Snippets reutilizables</span><span>Alto contraste</span></div></div>
+          </article>
+
+          <article class="feature-card">
+            <div class="media"><span class="media-badge">Biblioteca</span><img loading="lazy" src="assets/images/hero-programas-full.png" alt="Captura de la vista de programas con proyectos recientes en Cadencia"></div>
+            <div class="feature-content"><h3>Biblioteca de proyectos</h3><p>Consulta recientes con miniaturas, duración y cantidad de subtítulos para retomar un proyecto rápido y con contexto.</p><div class="bullets"><span>Recientes visuales</span><span>Búsqueda rápida</span><span>Acceso directo</span></div></div>
+          </article>
+
+          <article class="feature-card">
+            <div class="media"><span class="media-badge">Drive</span><img loading="lazy" src="assets/images/drive-full-access.png" alt="Captura de la carpeta del equipo conectada a Google Drive"></div>
+            <div class="feature-content"><h3>Google Drive integrado</h3><p>Abre la carpeta del equipo, descarga material y organiza proyectos sin brincar entre ventanas ni perder rutas.</p><div class="bullets"><span>Carpeta del equipo</span><span>Modo lectura</span><span>Sincronización visual</span></div></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="editor">
+      <div class="container split">
+        <div class="panel wide-media"><img loading="lazy" src="assets/images/timeline-multipista.png" alt="GIF principal de edición multipista en Cadencia"></div>
+        <div class="panel pad">
+          <div class="kicker">01 - Editor</div>
+          <h3>Precisión de fotograma con libertad de pistas.</h3>
+          <p>Cadencia está pensado para proyectos grandes: puedes ver el video, escuchar la forma de onda, editar subtítulos por hablante y conservar todo el contexto del proyecto en un solo archivo de trabajo.</p>
+          <div class="checklist">
+            <div class="check"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 16.6 4.9 12.3l-1.4 1.4 5.7 5.7L21 7.6 19.6 6.2z"/></svg><span><b>Pistas por hablante</b> con color, visibilidad y control individual.</span></div>
+            <div class="check"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 16.6 4.9 12.3l-1.4 1.4 5.7 5.7L21 7.6 19.6 6.2z"/></svg><span><b>Arrastre, recorte y desplazamiento</b> de cues sin salir del timeline.</span></div>
+            <div class="check"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 16.6 4.9 12.3l-1.4 1.4 5.7 5.7L21 7.6 19.6 6.2z"/></svg><span><b>Vista previa sincronizada</b> para revisar texto contra imagen y audio.</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="ia-local">
+      <div class="container split">
+        <div class="panel pad">
+          <div class="kicker">02 - Transcripción</div>
+          <h3>IA en tu equipo, no en una nube misteriosa.</h3>
+          <p>La transcripción corre localmente: eliges modelo, procesas video completo o solo un tramo complicado, y Cadencia puede separar hablantes en pistas para que la limpieza sea mucho más rápida.</p>
+          <div class="checklist">
+            <div class="check"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 16.6 4.9 12.3l-1.4 1.4 5.7 5.7L21 7.6 19.6 6.2z"/></svg><span>Modelos de transcripción según velocidad y precisión.</span></div>
+            <div class="check"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 16.6 4.9 12.3l-1.4 1.4 5.7 5.7L21 7.6 19.6 6.2z"/></svg><span>Detección de hablantes para crear pistas automáticamente.</span></div>
+            <div class="check"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 16.6 4.9 12.3l-1.4 1.4 5.7 5.7L21 7.6 19.6 6.2z"/></svg><span>Procesamiento por rango In/Out para iterar rápido.</span></div>
+          </div>
+        </div>
+        <div class="panel wide-media"><img loading="lazy" src="assets/images/transcripcion-local.png" alt="GIF del panel de transcripción local con IA"></div>
+      </div>
+    </section>
+
+    <section id="premiere">
+      <div class="container split">
+        <div class="panel wide-media"><img loading="lazy" src="assets/gifs/censuras-manuales-marcadores.gif" alt="GIF de censuras manuales convertidas en marcadores para Premiere"></div>
+        <div class="panel pad">
+          <div class="kicker">03 - Revisión y censura</div>
+          <h3>Marcadores listos para perseguir errores y censuras.</h3>
+          <p>El objetivo es que la revisión no sea una cacería interminable. Cadencia marca timecodes, palabras sensibles, censuras y correcciones para que puedas saltar al punto exacto, y comparte rápidamente las pistas de censura con Premiere mediante su extensión.</p>
+          <div class="checklist">
+            <div class="check"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 16.6 4.9 12.3l-1.4 1.4 5.7 5.7L21 7.6 19.6 6.2z"/></svg><span>Detección automática de palabras a censurar.</span></div>
+            <div class="check"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 16.6 4.9 12.3l-1.4 1.4 5.7 5.7L21 7.6 19.6 6.2z"/></svg><span>Marcadores para acelerar el trabajo en Premiere.</span></div>
+            <div class="check"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 16.6 4.9 12.3l-1.4 1.4 5.7 5.7L21 7.6 19.6 6.2z"/></svg><span>Correcciones con captura para no perder contexto.</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="drive">
+      <div class="container split">
+        <div class="panel pad">
+          <div class="kicker">04 - Organización</div>
+          <h3>Biblioteca ordenada y carpeta de equipo a la vista.</h3>
+          <p>Cadencia no solo edita subtítulos: también ayuda a guardar el contexto del proyecto, mantener recientes, ubicar material y trabajar con una carpeta sincronizada.</p>
+          <div class="checklist">
+            <div class="check"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 16.6 4.9 12.3l-1.4 1.4 5.7 5.7L21 7.6 19.6 6.2z"/></svg><span>Proyectos con miniatura, duración y contador de subtítulos.</span></div>
+            <div class="check"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 16.6 4.9 12.3l-1.4 1.4 5.7 5.7L21 7.6 19.6 6.2z"/></svg><span>Carpeta de Drive integrada en el flujo de trabajo.</span></div>
+            <div class="check"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 16.6 4.9 12.3l-1.4 1.4 5.7 5.7L21 7.6 19.6 6.2z"/></svg><span>Autoguardado y respaldo para evitar sustos.</span></div>
+          </div>
+        </div>
+        <div class="panel wide-media"><img loading="lazy" src="assets/images/drive-full-access.png" alt="Vista de carpeta de equipo conectada a Google Drive"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="container">
+        <div class="section-head">
+          <div><div class="kicker">Flujo</div><h2>Del audio al subtítulo final, sin fricción.</h2></div>
+          <p>Una página de GitHub funciona mejor cuando explica el flujo en segundos. Este bloque está hecho para que cualquiera entienda Cadencia sin leer un manual.</p>
+        </div>
+        <div class="workflow">
+          <div class="step"><strong>1</strong><h3>Importa</h3><p>Video, audio, SRT o proyecto .msub.</p></div>
+          <div class="step"><strong>2</strong><h3>Transcribe</h3><p>IA local con opción de separar hablantes.</p></div>
+          <div class="step"><strong>3</strong><h3>Edita</h3><p>Recorta, mueve y corrige en el timeline.</p></div>
+          <div class="step"><strong>4</strong><h3>Revisa</h3><p>Censuras, solapes, marcadores y capturas.</p></div>
+          <div class="step"><strong>5</strong><h3>Exporta</h3><p>SRT final o archivo .msub con subtítulos, pistas, marcadores, censuras, capturas y contexto para seguir trabajando sin reconstruir nada.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div class="container">
+        <div class="cta-box">
+          <h2>Cadencia convierte el subtitulado en un flujo de edición real.</h2>
+          <p>Ideal para editores que manejan videos largos, múltiples hablantes, censuras y revisiones: Cadencia evita vivir entre diez ventanas porque concentra el proyecto y su exportación en un solo archivo flexible.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <div class="brand"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 7h14M5 12h10M5 17h7" stroke="white" stroke-width="2.4" stroke-linecap="round"/></svg></span><span>Cadencia - editor de subtítulos multipista</span></div>
+      <div class="footer-links"><a href="#demos">Demos</a><a href="#editor">Editor</a><a href="#ia-local">IA local</a><a href="#drive">Drive</a></div>
+    </div>
+  </footer>
+</body>
+</html>

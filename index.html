@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0d0b12" />
+  <meta name="description" content="Cadencia: editor de subtítulos multipista con timeline visual, transcripción local, atajos, automatizaciones y formato .msub." />
+  <title>Cadencia — editor de subtítulos multipista</title>
+  <style>
+    :root{
+      --bg:#09080d;
+      --bg-soft:#0f0d16;
+      --panel:#15131d;
+      --panel-2:#1b1824;
+      --line:#2b2636;
+      --line-soft:#393142;
+      --text:#fff7ef;
+      --muted:#a9a0ad;
+      --muted-2:#716a79;
+      --accent:#ff684f;
+      --accent-2:#ff8b62;
+      --yellow:#f4d75d;
+      --teal:#26d0b0;
+      --blue:#4d92ff;
+      --green:#31e28c;
+      --shadow:0 34px 110px rgba(0,0,0,.62);
+      color-scheme:dark;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      color:var(--text);
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background:
+        radial-gradient(circle at 13% 4%, rgba(255,104,79,.22), transparent 28%),
+        radial-gradient(circle at 84% 1%, rgba(38,208,176,.13), transparent 25%),
+        radial-gradient(circle at 50% 52%, rgba(255,104,79,.08), transparent 40%),
+        linear-gradient(180deg,#0b0910 0%,#09080d 42%,#06060a 100%);
+      overflow-x:hidden;
+    }
+    body:before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:0;
+      opacity:.04;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23noise)' opacity='.88'/%3E%3C/svg%3E");
+      mix-blend-mode:screen;
+    }
+    a{color:inherit}
+    .wrap{width:min(1200px, calc(100% - 38px));margin-inline:auto;position:relative;z-index:1}
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:50;
+      background:rgba(9,8,13,.75);
+      backdrop-filter:blur(18px);
+      border-bottom:1px solid rgba(56,49,67,.55);
+    }
+    .topbar .wrap{height:72px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+    .brand{display:flex;align-items:center;gap:12px;text-decoration:none;font-weight:950;letter-spacing:-.04em;font-size:19px}
+    .logo{
+      width:35px;height:35px;border-radius:12px;
+      display:grid;place-items:center;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      color:white;box-shadow:0 0 34px rgba(255,104,79,.28);
+      position:relative;overflow:hidden;
+    }
+    .logo:before,.logo:after{content:"";position:absolute;left:9px;right:9px;height:3px;background:#fff;border-radius:999px}.logo:before{top:12px}.logo:after{top:19px}
+    nav{display:flex;gap:4px;align-items:center}
+    nav a{color:#b7afbc;text-decoration:none;font-size:13px;font-weight:800;padding:10px 12px;border-radius:999px}
+    nav a:hover{background:#191721;color:#fff}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:0 19px;border-radius:15px;text-decoration:none;font-weight:950;font-size:13px;border:1px solid transparent;white-space:nowrap;transition:.18s ease}
+    .btn.primary{background:linear-gradient(135deg,var(--accent),#ff8c68);color:white;box-shadow:0 22px 70px rgba(255,104,79,.25)}
+    .btn.primary:hover{transform:translateY(-2px);box-shadow:0 30px 90px rgba(255,104,79,.32)}
+    .btn.secondary{background:#17141f;border-color:#342d3f;color:#f0eaf2}
+    .btn.ghost{border-color:#342d3f;color:#c4bcc9;background:rgba(21,19,29,.58)}
+    .hero{padding:84px 0 62px}
+    .hero-grid{display:grid;grid-template-columns:.86fr 1.14fr;gap:46px;align-items:center}
+    .kicker{display:inline-flex;align-items:center;gap:9px;margin:0 0 18px;color:var(--accent-2);font-size:11px;font-weight:1000;letter-spacing:.18em;text-transform:uppercase}
+    .kicker:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 22px var(--accent)}
+    h1{font-size:clamp(48px,7.6vw,92px);line-height:.9;letter-spacing:-.078em;margin:0 0 24px;font-weight:950}
+    h1 span{color:#87808d;font-weight:560}
+    .lead{font-size:18px;line-height:1.68;color:#c3bcc8;max-width:650px;margin:0}
+    .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin:32px 0 25px}
+    .badges{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+    .badge{border:1px solid rgba(65,56,77,.88);background:rgba(21,19,29,.72);border-radius:999px;padding:9px 12px;color:#a9a1ae;font-size:12px;font-weight:800}.badge b{color:white}
+    .frame{position:relative;border-radius:30px;padding:8px;background:linear-gradient(135deg,rgba(255,104,79,.72),rgba(244,215,93,.22),rgba(38,208,176,.20));box-shadow:var(--shadow)}
+    .frame:before{content:"";position:absolute;inset:-9% -8%;z-index:-1;background:radial-gradient(circle at 30% 20%,rgba(255,104,79,.25),transparent 35%),radial-gradient(circle at 92% 2%,rgba(244,215,93,.18),transparent 32%);filter:blur(36px)}
+    .media{width:100%;display:block;border-radius:23px;border:1px solid rgba(76,67,90,.8);background:#07070a;object-fit:cover}
+    .hero .media{aspect-ratio:16/9}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:17px}.stat{border:1px solid var(--line);background:rgba(21,19,29,.68);border-radius:18px;padding:16px}.stat strong{display:block;font-size:24px;letter-spacing:-.045em}.stat span{display:block;margin-top:3px;color:#8f8796;font-size:12px;line-height:1.35}
+    .section{padding:74px 0}.section.compact{padding-top:36px}.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:28px}.section-head h2{font-size:clamp(34px,5.3vw,64px);line-height:.94;letter-spacing:-.065em;margin:0;max-width:790px}.section-head p{color:#9e96a5;line-height:1.65;margin:0;max-width:560px}
+    .workflow{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}.flow{border:1px solid var(--line);background:linear-gradient(135deg,rgba(25,22,32,.96),rgba(13,11,17,.96));border-radius:21px;padding:18px;min-height:158px;position:relative;overflow:hidden}.flow:before{content:attr(data-step);position:absolute;right:14px;top:10px;color:rgba(255,255,255,.07);font-size:52px;font-weight:1000;letter-spacing:-.08em}.flow b{display:block;color:var(--accent-2);font-size:11px;text-transform:uppercase;letter-spacing:.14em;margin-bottom:26px}.flow h3{font-size:18px;line-height:1.08;margin:0 0 10px;letter-spacing:-.035em}.flow p{margin:0;color:#8f8796;font-size:13px;line-height:1.55}
+    .showcase{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{border:1px solid var(--line);background:linear-gradient(135deg,rgba(24,21,31,.95),rgba(10,9,14,.96));border-radius:27px;overflow:hidden;box-shadow:0 20px 80px rgba(0,0,0,.24)}.card .media{border:none;border-radius:0}.card-body{padding:22px}.card small{color:var(--accent-2);font-weight:1000;letter-spacing:.16em;text-transform:uppercase;font-size:10px}.card h3{margin:9px 0 8px;font-size:25px;letter-spacing:-.045em;line-height:1.08}.card p{margin:0;color:#918a98;line-height:1.62;font-size:14px}.wide{grid-column:span 2}.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.feature{border:1px solid var(--line);background:linear-gradient(135deg,rgba(23,20,30,.96),rgba(11,10,15,.96));border-radius:24px;padding:22px;min-height:220px;position:relative;overflow:hidden}.feature:after{content:"";position:absolute;right:-50px;bottom:-70px;width:160px;height:160px;border-radius:50%;background:rgba(255,104,79,.08);filter:blur(2px)}.feature:nth-child(2n):after{background:rgba(38,208,176,.09)}.feature .num{width:43px;height:43px;border-radius:14px;border:1px solid #3a3144;background:#1c1823;color:var(--accent-2);display:grid;place-items:center;font-weight:1000;margin-bottom:34px}.feature h3{margin:0 0 10px;font-size:20px;letter-spacing:-.035em}.feature p{margin:0;color:#918a98;line-height:1.58;font-size:13px}
+    .split{display:grid;grid-template-columns:.9fr 1.1fr;gap:18px;align-items:stretch}.copy-panel{border:1px solid var(--line);background:linear-gradient(135deg,rgba(23,20,30,.96),rgba(10,9,14,.96));border-radius:27px;padding:28px;display:flex;flex-direction:column;justify-content:center}.copy-panel h2{font-size:clamp(34px,4.8vw,58px);line-height:.95;letter-spacing:-.065em;margin:0 0 16px}.copy-panel p{margin:0 0 22px;color:#aaa2af;line-height:1.7}.checklist{display:grid;gap:10px}.check{border:1px solid #332d3d;background:rgba(14,12,18,.76);border-radius:15px;padding:13px 14px;color:#bfb6c5;font-size:13px}.check b{color:white}
+    .mini-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}.pill-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}.pill{border:1px solid #393142;background:#14121b;border-radius:999px;color:#b6aebc;font-size:12px;font-weight:800;padding:9px 11px}.cta{border:1px solid rgba(255,104,79,.35);background:radial-gradient(circle at 12% 0%,rgba(255,104,79,.22),transparent 34%),linear-gradient(135deg,rgba(25,22,32,.98),rgba(10,9,14,.98));border-radius:32px;padding:34px;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;overflow:hidden;position:relative}.cta h2{font-size:clamp(34px,5vw,62px);line-height:.95;letter-spacing:-.065em;margin:0 0 12px}.cta p{margin:0;color:#a9a1ae;line-height:1.65;max-width:760px}.contact-box{display:grid;gap:10px;min-width:250px}.contact-box a{justify-content:center}.footer{padding:38px 0 48px;color:#7d7484;border-top:1px solid rgba(56,49,67,.5)}.footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:18px}.footer b{color:#eee6ef}.footer-links{display:flex;gap:15px;flex-wrap:wrap}.footer a{text-decoration:none;color:#c2b8c7;font-weight:800}
+    @media(max-width:1080px){.hero-grid,.split,.cta{grid-template-columns:1fr}.workflow{grid-template-columns:repeat(3,1fr)}.feature-grid{grid-template-columns:repeat(2,1fr)}nav{display:none}.section-head{display:block}.section-head p{margin-top:14px}.contact-box{min-width:0}.showcase{grid-template-columns:1fr}.wide{grid-column:auto}}
+    @media(max-width:680px){.topbar .btn{display:none}.hero{padding-top:54px}h1{font-size:52px}.lead{font-size:16px}.stats,.workflow,.feature-grid,.mini-grid{grid-template-columns:1fr}.section{padding:54px 0}.card-body{padding:18px}.footer .wrap{display:block}.footer-links{margin-top:16px}.cta{padding:24px}.wrap{width:min(100% - 24px,1200px)}}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="#inicio" aria-label="Cadencia inicio"><span class="logo"></span><span>Cadencia</span></a>
+      <nav aria-label="Navegación principal">
+        <a href="#workflow">Workflow</a>
+        <a href="#msub">Formato .msub</a>
+        <a href="#timeline">Timeline</a>
+        <a href="#edicion">Edición</a>
+        <a href="#transcripcion">IA local</a>
+        <a href="#contacto">Resumen</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="inicio">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <p class="kicker">Editor de subtítulos multipista</p>
+          <h1>Subtitula como si tu timeline tuviera superpoderes.</h1>
+          <p class="lead">Cadencia convierte subtítulos, pistas, marcadores, transcripción local y correcciones rápidas en una sola mesa de edición visual. Pensado para videos largos, entrevistas, evidencia, narradores y flujos donde una lista plana ya no alcanza.</p>
+          <div class="hero-actions">
+            <a class="btn primary" href="#workflow">Ver workflow ↓</a>
+            <a class="btn ghost" href="#edicion">Ver edición rápida</a>
+          </div>
+          <div class="badges">
+            <span class="badge"><b>.msub</b> proyecto vivo</span>
+            <span class="badge"><b>Timeline</b> multipista</span>
+            <span class="badge"><b>IA local</b> con hablantes</span>
+            <span class="badge"><b>Atajos</b> de editor</span>
+          </div>
+        </div>
+        <div>
+          <div class="frame">
+            <video class="media lazy-video" poster="assets/posters/hero.jpg" autoplay muted loop playsinline preload="metadata">
+              <source src="assets/media/hero.mp4" type="video/mp4" />
+            </video>
+          </div>
+          <div class="stats" aria-label="Resumen de capacidades">
+            <div class="stat"><strong>Visual</strong><span>subtítulos como clips sobre una línea de tiempo</span></div>
+            <div class="stat"><strong>Rápido</strong><span>cortar, unir, mover, borrar y deshacer sin romper flujo</span></div>
+            <div class="stat"><strong>Completo</strong><span>proyectos, pistas, marcadores y transcripción en un solo lugar</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section compact" id="workflow">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Del archivo al subtítulo final, sin brincar entre herramientas.</h2>
+          <p>Cadencia organiza el flujo completo: importar, transcribir, separar hablantes, corregir, evitar solapamientos y guardar todo el proyecto en .msub.</p>
+        </div>
+        <div class="workflow">
+          <article class="flow" data-step="01"><b>Entrada</b><h3>Importa video, SRT o .msub</h3><p>Empieza desde cero, continúa un proyecto o combina varias pistas SRT.</p></article>
+          <article class="flow" data-step="02"><b>IA local</b><h3>Transcribe por rango</h3><p>Procesa toda la secuencia o solo el tramo In/Out, con detección de hablantes.</p></article>
+          <article class="flow" data-step="03"><b>Pistas</b><h3>Convierte voces en capas</h3><p>Trabaja oficiales, sospechosos, testigos y narrador como pistas visuales.</p></article>
+          <article class="flow" data-step="04"><b>Edición</b><h3>Corta y une rápido</h3><p>Usa atajos familiares y operaciones pensadas para video.</p></article>
+          <article class="flow" data-step="05"><b>Automático</b><h3>Evita solapamientos</h3><p>El texto se acomoda para no taparse en pantalla.</p></article>
+          <article class="flow" data-step="06"><b>Salida</b><h3>Exporta SRT o .msub</h3><p>Guarda todo el contexto del proyecto para volver después.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section compact" id="msub">
+      <div class="wrap split">
+        <div class="copy-panel">
+          <p class="kicker">Formato de proyecto</p>
+          <h2>.msub es el corazón de Cadencia.</h2>
+          <p>Un SRT solo guarda texto y tiempos. Un proyecto <b>.msub</b> conserva el trabajo completo: pistas, etiquetas, marcadores, estado de edición, capturas, referencias al material y organización del timeline.</p>
+          <div class="checklist">
+            <div class="check"><b>Proyecto vivo:</b> cierra y vuelve después sin perder estructura ni contexto.</div>
+            <div class="check"><b>Multipista real:</b> guarda hablantes separados, orden y capas de trabajo.</div>
+            <div class="check"><b>Más que subtítulos:</b> conserva marcadores, notas, capturas y ajustes del flujo.</div>
+            <div class="check"><b>Salida compatible:</b> edita en .msub y exporta SRT cuando necesites entregar.</div>
+          </div>
+        </div>
+        <article class="card">
+          <video class="media lazy-video" poster="assets/posters/new-project.jpg" autoplay muted loop playsinline preload="metadata"><source src="assets/media/new-project.mp4" type="video/mp4" /></video>
+          <div class="card-body"><small>Inicio flexible</small><h3>Importa video, abre .msub o combina varias pistas SRT.</h3><p>El formato .msub funciona como contenedor de proyecto: guarda el estado completo para que el editor no tenga que reconstruir pistas, etiquetas y marcadores cada vez.</p></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="timeline">
+      <div class="wrap showcase">
+        <article class="card wide">
+          <video class="media lazy-video" poster="assets/posters/timelapse.jpg" autoplay muted loop playsinline preload="metadata">
+            <source src="assets/media/timelapse.mp4" type="video/mp4" />
+          </video>
+          <div class="card-body">
+            <small>Timeline multipista</small>
+            <h3>No es una lista de subtítulos. Es una línea de tiempo.</h3>
+            <p>Visualiza pistas, waveform, playhead, zoom y bloques de texto como si editaras clips. Perfecto para materiales largos con varios hablantes y muchas correcciones.</p>
+          </div>
+        </article>
+        <article class="card">
+          <video class="media lazy-video" poster="assets/posters/multi-track.jpg" autoplay muted loop playsinline preload="metadata">
+            <source src="assets/media/multi-track.mp4" type="video/mp4" />
+          </video>
+          <div class="card-body">
+            <small>Movimiento preciso</small>
+            <h3>Mueve múltiples pistas como clips.</h3>
+            <p>Selecciona bloques grandes, desplázalos y conserva el orden visual para ajustar diálogos enteros sin hacerlo subtítulo por subtítulo.</p>
+          </div>
+        </article>
+        <article class="card">
+          <video class="media lazy-video" poster="assets/posters/label-realtime.jpg" autoplay muted loop playsinline preload="metadata">
+            <source src="assets/media/label-realtime.mp4" type="video/mp4" />
+          </video>
+          <div class="card-body">
+            <small>Etiquetas vivas</small>
+            <h3>Las etiquetas cambian con la pista.</h3>
+            <p>Al mover un subtítulo de pista, Cadencia actualiza el hablante en tiempo real. Menos edición manual, menos errores repetidos.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="edicion">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Edición rápida con memoria muscular de editor.</h2>
+          <p>Borra, corta, une, reemplaza, copia, pega y deshaz usando gestos y atajos que se sienten naturales si vienes de edición de video.</p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature"><div class="num">⌫</div><h3>Borrar y deshacer sin miedo</h3><p>Elimina subtítulos rápido y usa combinaciones conocidas como Ctrl+Z, Ctrl+C y Ctrl+V para corregir sin romper el ritmo.</p></article>
+          <article class="feature"><div class="num">✂</div><h3>Corte preciso por palabra</h3><p>El cursor de texto sigue al playhead para saber exactamente en qué palabra estás al dividir un subtítulo.</p></article>
+          <article class="feature"><div class="num">↔</div><h3>Unir frases sin ensuciar etiquetas</h3><p>Combina subtítulos contiguos y deja una sola etiqueta limpia, como si siempre hubieran sido uno.</p></article>
+        </div>
+        <div class="showcase" style="margin-top:18px">
+          <article class="card">
+            <video class="media lazy-video" poster="assets/posters/quick-delete.jpg" autoplay muted loop playsinline preload="metadata"><source src="assets/media/quick-delete.mp4" type="video/mp4" /></video>
+            <div class="card-body"><small>Atajos conocidos</small><h3>Borra, copia, pega y deshaz.</h3><p>Operaciones rápidas para trabajar cientos de subtítulos sin pelearte con la interfaz.</p></div>
+          </article>
+          <article class="card">
+            <video class="media lazy-video" poster="assets/posters/split-precise.jpg" autoplay muted loop playsinline preload="metadata"><source src="assets/media/split-precise.mp4" type="video/mp4" /></video>
+            <div class="card-body"><small>Corte fino</small><h3>Divide textos en el punto exacto.</h3><p>El playhead y el cursor de texto trabajan juntos para cortar justo donde corresponde.</p></div>
+          </article>
+          <article class="card">
+            <video class="media lazy-video" poster="assets/posters/merge-auto.jpg" autoplay muted loop playsinline preload="metadata"><source src="assets/media/merge-auto.mp4" type="video/mp4" /></video>
+            <div class="card-body"><small>Unión automática</small><h3>Une dos subs y conserva una sola etiqueta.</h3><p>Ideal para limpiar cortes innecesarios y mantener una lectura natural.</p></div>
+          </article>
+          <article class="card">
+            <video class="media lazy-video" poster="assets/posters/merge-fast.jpg" autoplay muted loop playsinline preload="metadata"><source src="assets/media/merge-fast.mp4" type="video/mp4" /></video>
+            <div class="card-body"><small>Fusión rápida</small><h3>Automatiza microcorrecciones repetitivas.</h3><p>Acciones pequeñas como unir, ajustar y limpiar texto se resuelven en segundos; repetidas cientos de veces, se convierten en horas recuperadas.</p></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="automatizacion">
+      <div class="wrap split">
+        <div class="copy-panel">
+          <p class="kicker">Automatizaciones para casos reales</p>
+          <h2>Menos trabajo manual, más control visual.</h2>
+          <p>Cadencia no solo muestra subtítulos: entiende pistas, etiquetas, solapamientos, reemplazos frecuentes y texto sensible para ayudarte a limpiar proyectos grandes.</p>
+          <div class="checklist">
+            <div class="check"><b>Anti-solapamiento:</b> evita que dos textos se encimen en pantalla.</div>
+            <div class="check"><b>Etiquetas automáticas:</b> el hablante se actualiza al mover de pista.</div>
+            <div class="check"><b>Textos rápidos:</b> reemplaza selecciones desde una lista editable.</div>
+            <div class="check"><b>Censuras detectadas:</b> ubica contenido sensible marcado con asteriscos o etiquetas.</div>
+          </div>
+        </div>
+        <article class="card">
+          <video class="media lazy-video" poster="assets/posters/anti-overlap.jpg" autoplay muted loop playsinline preload="metadata"><source src="assets/media/anti-overlap.mp4" type="video/mp4" /></video>
+          <div class="card-body"><small>Sistema anti solapamientos</small><h3>El texto nunca se tapa encima de otro.</h3><p>Si dos subtítulos coinciden, Cadencia acomoda el más pequeño en otro renglón para conservar lectura limpia.</p></div>
+        </article>
+      </div>
+      <div class="wrap showcase" style="margin-top:18px">
+        <article class="card">
+          <video class="media lazy-video" poster="assets/posters/quick-replace.jpg" autoplay muted loop playsinline preload="metadata"><source src="assets/media/quick-replace.mp4" type="video/mp4" /></video>
+          <div class="card-body"><small>Texto rápido</small><h3>Reemplaza texto seleccionado en segundos.</h3><p>Usa una lista editable para insertar frases recurrentes como etiquetas, redacciones, inaudibles o notas de privacidad.</p></div>
+        </article>
+        <article class="card">
+          <video class="media lazy-video" poster="assets/posters/auto-censor.jpg" autoplay muted loop playsinline preload="metadata"><source src="assets/media/auto-censor.mp4" type="video/mp4" /></video>
+          <div class="card-body"><small>Revisión sensible</small><h3>Detecta censuras y marcas manuales.</h3><p>Encuentra groserías censuradas, asteriscos y etiquetas como [Redacted for Privacy] para revisar material delicado con menos riesgo.</p></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="transcripcion">
+      <div class="wrap showcase">
+        <article class="card wide">
+          <video class="media lazy-video" poster="assets/posters/transcripcion-hablantes.jpg" autoplay muted loop playsinline preload="metadata"><source src="assets/media/transcripcion-hablantes.mp4" type="video/mp4" /></video>
+          <div class="card-body"><small>Transcripción local</small><h3>Subtítulos base con detección de hablantes.</h3><p>Cadencia puede generar una primera versión de subtítulos y separar voces en pistas para acelerar el armado inicial. En audios claros puede alcanzar hasta un 80% de precisión como punto de partida, dejando la revisión fina en manos del editor.</p></div>
+        </article>
+      </div>
+      <div class="wrap mini-grid" style="margin-top:18px">
+        <article class="card">
+          <video class="media lazy-video" poster="assets/posters/storage.jpg" autoplay muted loop playsinline preload="metadata"><source src="assets/media/storage.mp4" type="video/mp4" /></video>
+          <div class="card-body"><small>Almacenamiento conectado</small><h3>Trabaja desde Google Drive, NAS o carpetas compartidas.</h3><p>Ideal para equipos que guardan proyectos y material pesado fuera del escritorio local.</p></div>
+        </article>
+        <article class="card">
+          <video class="media lazy-video" poster="assets/posters/users.jpg" autoplay muted loop playsinline preload="metadata"><source src="assets/media/users.mp4" type="video/mp4" /></video>
+          <div class="card-body"><small>Usuarios</small><h3>Preparado para cuentas y flujo de equipo.</h3><p>Un punto de partida para control de usuario, espacios de trabajo y futuras integraciones.</p></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="personalizacion">
+      <div class="wrap split">
+        <div class="copy-panel">
+          <p class="kicker">Personalización</p>
+          <h2>El editor se adapta a tu forma de trabajar.</h2>
+          <p>Cambia apariencia, color de acento y atajos para que Cadencia se sienta como una herramienta propia, no como una interfaz rígida.</p>
+          <div class="pill-row">
+            <span class="pill">Modo oscuro</span>
+            <span class="pill">Modo claro</span>
+            <span class="pill">Color de acento</span>
+            <span class="pill">Atajos editables</span>
+            <span class="pill">Importar / exportar shortcuts</span>
+          </div>
+        </div>
+        <div class="showcase" style="display:grid;grid-template-columns:1fr;gap:18px">
+          <article class="card">
+            <video class="media lazy-video" poster="assets/posters/theme-customization.jpg" autoplay muted loop playsinline preload="metadata"><source src="assets/media/theme-customization.mp4" type="video/mp4" /></video>
+            <div class="card-body"><small>Apariencia</small><h3>Tema y color de acento.</h3><p>Personaliza el ambiente visual para largas sesiones de edición.</p></div>
+          </article>
+          <article class="card">
+            <video class="media lazy-video" poster="assets/posters/shortcuts.jpg" autoplay muted loop playsinline preload="metadata"><source src="assets/media/shortcuts.mp4" type="video/mp4" /></video>
+            <div class="card-body"><small>Atajos</small><h3>Configura tu propia memoria muscular.</h3><p>Define combinaciones para reproducción, navegación, edición y acciones fijas.</p></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="contacto">
+      <div class="wrap">
+        <div class="cta">
+          <div>
+            <h2>Hecho para editar subtítulos de verdad.</h2>
+            <p>Cadencia está pensado para proyectos largos, diálogos con varios hablantes, revisión sensible, transcripción local y entregas donde cada segundo de corrección cuenta.</p>
+          </div>
+          <div class="contact-box">
+            <a class="btn primary" href="#workflow">Ver workflow ↓</a>
+            <a class="btn ghost" href="#inicio">Volver arriba ↑</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <div><b>Cadencia</b> · editor de subtítulos multipista</div>
+      <div class="footer-links">
+        <a href="#workflow">Workflow</a>
+        <a href="#msub">.msub</a>
+        <a href="#edicion">Edición</a>
+        <a href="#transcripcion">IA local</a>
+        <a href="#contacto">Resumen</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const videos = [...document.querySelectorAll('.lazy-video')];
+    const canAutoplay = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!canAutoplay) {
+      videos.forEach(v => { v.pause(); v.removeAttribute('autoplay'); });
+    } else if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          const video = entry.target;
+          if (entry.isIntersecting) video.play().catch(() => {});
+          else video.pause();
+        });
+      }, { threshold: 0.18 });
+      videos.forEach(v => observer.observe(v));
+    }
+  </script>
+</body>
+</html>
